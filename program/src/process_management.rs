@@ -119,6 +119,7 @@ pub fn process_add_validator(program_id: &Pubkey, accounts_raw: &[AccountInfo]) 
     let mut lido = deserialize_lido(program_id, accounts.lido)?;
     lido.check_manager(accounts.manager)?;
     lido.check_stake_pool(accounts.stake_pool)?;
+    //REVIEW - This following check is the same as this ^^ check 'check_stake_pool'
     if &lido.stake_pool_account != accounts.stake_pool.key {
         msg!("Invalid stake pool");
         return Err(LidoError::InvalidStakePool.into());
@@ -127,6 +128,7 @@ pub fn process_add_validator(program_id: &Pubkey, accounts_raw: &[AccountInfo]) 
     let validator_token_account = spl_token::state::Account::unpack_from_slice(
         &accounts.validator_token_account.data.borrow(),
     )?;
+        //REVIEW - name of validator_token_account
     if lido.st_sol_mint_program != validator_token_account.mint {
         msg!(
             "Validator account minter should be the same as Lido minter {}",
@@ -193,6 +195,7 @@ pub fn process_remove_validator(
     }
     let mut lido = deserialize_lido(program_id, accounts.lido)?;
     lido.check_manager(accounts.manager)?;
+    //REVIEW - Replace with lido.check_stake_pool
     if &lido.stake_pool_account != accounts.stake_pool.key {
         msg!("Invalid stake pool");
         return Err(LidoError::InvalidStakePool.into());

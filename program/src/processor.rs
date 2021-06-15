@@ -59,10 +59,10 @@ pub fn process_initialize(
     rent_exemption(rent, accounts.reserve_account, AccountType::ReserveAccount)?;
 
     let mut lido = deserialize_lido(program_id, accounts.lido)?;
-    lido.is_initialized()?;
+    lido.is_initialized()?;  //REVIEW - This could be better named for readability - check_is_initialised_or_error or something similar.  Also a comment regarding termination if lido is intialised already.
 
     let stake_pool = StakePool::try_from_slice(&accounts.stake_pool.data.borrow())?;
-    if stake_pool.is_uninitialized() {
+    if stake_pool.is_uninitialized() {  //REVIEW - Same here as prior review comment ^^.
         msg!("Provided stake pool not initialized");
         return Err(LidoError::InvalidStakePool.into());
     }

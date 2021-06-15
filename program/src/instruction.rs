@@ -804,6 +804,7 @@ accounts_struct! {
             is_writable: false,
         },
         // New Staker and Withdrawer authority of the stake account
+        // REVIEW - Needs larger discussion and push to main documentation.
         pub new_withdraw_authority {
             is_signer: false,
             is_writable: false,
