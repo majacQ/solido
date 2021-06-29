@@ -25,6 +25,7 @@ from util import (
     solana_program_deploy,
     solido,
 )
+from start_test_validator import advance_validator_epoch
 
 # We start by generating an account that we will need later. We put the tests
 # keys in a directory where we can .gitignore them, so they don't litter the
@@ -392,3 +393,64 @@ result = solido(
 )
 assert result is None, f'Huh, perform-maintenance performed {result}'
 print('> There was nothing to do, as expected.')
+
+# Test maintainer merges two activating stake accounts at the end
+solana('transfer', '--allow-unfunded-recipient', reserve_authority, '10.0')
+print(f'> Funded reserve {reserve_authority} with 10.0 SOL')
+result = solido(
+    'perform-maintenance',
+    '--solido-address',
+    solido_address,
+    '--solido-program-id',
+    solido_program_id,
+    keypair_path=maintainer.keypair_path,
+)
+expected_result = [
+    {
+        'StakeDeposit': {
+            'validator_vote_account': validator_vote_account.pubkey,
+            'amount_lamports': 10000500000,
+        }
+    },
+    {
+        'MergeStake': {
+            'validator_vote_account': validator_vote_account.pubkey,
+            'from_stake_seed': 2,
+            'to_stake_seed': 1,
+        }
+    },
+]
+del result[0]['StakeDeposit']['stake_account']
+del result[1]['MergeStake']['from_stake']
+del result[1]['MergeStake']['to_stake']
+assert result == expected_result, f'\nExpected: {expected_result}\nActual:   {result}'
+print('> Advancing to the next epoch')
+
+# import subprocess, time
+# import os
+
+# subprocess.Popen(
+#     ['killall', '-INT', 'solana-test-validator'],
+#     stdout=subprocess.DEVNULL,
+# )
+# time.sleep(5)
+# os.system(
+#     ' '.join(
+#         ['solana-test-validator', '--slots-per-epoch', '1000', '--warp-slot', '1000']
+#     )
+# )
+# subprocess.Popen(
+#     ['solana-test-validator', '--slots-per-epoch', '1000', '--warp-slot', '1000'],
+#     stdout=subprocess.DEVNULL,
+# )
+
+# advance_validator_epoch(1)
+# result = solido(
+#     'perform-maintenance',
+#     '--solido-address',
+#     solido_address,
+#     '--solido-program-id',
+#     solido_program_id,
+#     keypair_path=maintainer.keypair_path,
+# )
+# print(result)
