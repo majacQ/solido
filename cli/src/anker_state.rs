@@ -34,31 +34,30 @@ pub struct AnkerState {
 impl AnkerState {
     pub fn new(
         config: &mut SnapshotConfig,
-        anker_program_id: Pubkey,
-        solido_address: &Pubkey,
+        anker_program_id: &Pubkey,
+        anker_address: &Pubkey,
         solido: &Lido,
     ) -> Result<Self> {
-        let (anker_instance, _anker_bump_seed) =
-            find_instance_address(&anker_program_id, solido_address);
-        let anker = config.client.get_anker(&anker_instance)?;
+        let anker = config.client.get_anker(&anker_address)?;
 
-        let token_swap_account = config.client.get_account(&anker.token_swap_pool)?;
-        let token_swap = spl_token_swap::state::SwapV1::unpack(token_swap_account.data())?;
+        //let token_swap_account = config.client.get_account(&anker.token_swap_pool)?;
+        //let token_swap = spl_token_swap::state::SwapV1::unpack(token_swap_account.data())?;
 
         let (anker_ust_reserve, _anker_ust_reserve_bump_seed) =
-            find_ust_reserve_account(&anker_program_id, solido_address);
+            find_ust_reserve_account(&anker_program_id, anker_address);
         let ust_reserve_balance =
             MicroUst(config.client.get_spl_token_balance(&anker_ust_reserve)?);
+        let ust_account: spl_token::state::Account = config.client.get_unpack(&anker_ust_reserve)?;
 
         let (anker_st_sol_reserve, _anker_st_sol_reserve_bump_seed) =
-            find_st_sol_reserve_account(&anker_program_id, solido_address);
+            find_st_sol_reserve_account(&anker_program_id, anker_address);
         let st_sol_reserve_balance =
             StLamports(config.client.get_spl_token_balance(&anker_st_sol_reserve)?);
 
         let b_sol_mint_account = config.client.get_spl_token_mint(&anker.b_sol_mint)?;
         let b_sol_total_supply_amount = BLamports(b_sol_mint_account.supply);
 
-        let (ust_account, ust_mint, st_sol_account) =
+        /*let (ust_account, ust_mint, st_sol_account) =
             if token_swap.token_a_mint == solido.st_sol_mint {
                 (
                     token_swap.token_b,
@@ -72,16 +71,17 @@ impl AnkerState {
                     token_swap.token_b,
                 )
             };
+         */
 
         Ok(AnkerState {
-            anker_program_id,
+            anker_program_id: anker_program_id.clone(),
             anker,
             b_sol_total_supply_amount,
-            pool_st_sol_account: st_sol_account,
-            pool_ust_account: ust_account,
-            ust_mint,
-            pool_mint: token_swap.pool_mint,
-            pool_fee_account: token_swap.pool_fee_account,
+            pool_st_sol_account: Pubkey::new_unique(),
+            pool_ust_account: Pubkey::new_unique(),
+            ust_mint: ust_account.mint,
+            pool_mint: Pubkey::new_unique(),
+            pool_fee_account: Pubkey::new_unique(),
             ust_reserve_balance,
             st_sol_reserve_balance,
         })
@@ -98,10 +98,10 @@ impl AnkerState {
             find_ust_reserve_account(&self.anker_program_id, &anker_instance);
 
         let (st_sol_reserve_account, _st_sol_reserve_bump_seed) =
-            find_st_sol_reserve_account(&self.anker_program_id, &solido_address);
+            find_st_sol_reserve_account(&self.anker_program_id, &anker_instance);
 
         let (reserve_authority, _reserve_authority_bump_seed) =
-            find_reserve_authority(&self.anker_program_id, &solido_address);
+            find_reserve_authority(&self.anker_program_id, &anker_instance);
 
         let (token_pool_authority, _authority_bump_seed) = Pubkey::find_program_address(
             &[&self.anker.token_swap_pool.to_bytes()[..]],
@@ -148,7 +148,7 @@ impl AnkerState {
             find_ust_reserve_account(&self.anker_program_id, &anker_instance);
 
         let (reserve_authority, _reserve_authority_bump_seed) =
-            find_reserve_authority(&self.anker_program_id, &solido_address);
+            find_reserve_authority(&self.anker_program_id, &anker_instance);
 
         // Wormhole requires allocating a new "message" account for every
         // Wormhole transaction.
@@ -178,6 +178,7 @@ impl AnkerState {
                 config_key: transfer_args.config_key,
                 ust_reserve_account,
                 ust_mint: self.ust_mint,
+                authority_signer_key: transfer_args.authority_signer_key,
                 custody_key: transfer_args.custody_key,
                 custody_signer_key: transfer_args.custody_signer_key,
                 bridge_config: transfer_args.bridge_config,
