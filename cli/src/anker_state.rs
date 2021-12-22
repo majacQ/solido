@@ -47,7 +47,8 @@ impl AnkerState {
             find_ust_reserve_account(&anker_program_id, anker_address);
         let ust_reserve_balance =
             MicroUst(config.client.get_spl_token_balance(&anker_ust_reserve)?);
-        let ust_account: spl_token::state::Account = config.client.get_unpack(&anker_ust_reserve)?;
+        let ust_account: spl_token::state::Account =
+            config.client.get_unpack(&anker_ust_reserve)?;
 
         let (anker_st_sol_reserve, _anker_st_sol_reserve_bump_seed) =
             find_st_sol_reserve_account(&anker_program_id, anker_address);
@@ -58,20 +59,20 @@ impl AnkerState {
         let b_sol_total_supply_amount = BLamports(b_sol_mint_account.supply);
 
         /*let (ust_account, ust_mint, st_sol_account) =
-            if token_swap.token_a_mint == solido.st_sol_mint {
-                (
-                    token_swap.token_b,
-                    token_swap.token_b_mint,
-                    token_swap.token_a,
-                )
-            } else {
-                (
-                    token_swap.token_a,
-                    token_swap.token_a_mint,
-                    token_swap.token_b,
-                )
-            };
-         */
+           if token_swap.token_a_mint == solido.st_sol_mint {
+               (
+                   token_swap.token_b,
+                   token_swap.token_b_mint,
+                   token_swap.token_a,
+               )
+           } else {
+               (
+                   token_swap.token_a,
+                   token_swap.token_a_mint,
+                   token_swap.token_b,
+               )
+           };
+        */
 
         Ok(AnkerState {
             anker_program_id: anker_program_id.clone(),
